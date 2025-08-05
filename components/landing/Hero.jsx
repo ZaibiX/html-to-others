@@ -10,9 +10,21 @@ export default function Hero() {
   const [loading, setLoading] = useState(false);
 
   const handleUpload = (e) => {
-    setFile(e.target.files[0]);
-    setConvertedFileUrl('');
-  };
+  const uploadedFile = e.target.files[0];
+  console.log("File name is ", uploadedFile.name)
+
+  if (!uploadedFile) return;
+
+  // Validate extension
+  if (!uploadedFile.name.endsWith('.html')) {
+    alert('Only .html files are allowed.');
+    return;
+  }
+
+  setFile(uploadedFile);
+  setConvertedFileUrl('');
+};
+
 
   const handleConvert = async () => {
     if (!file) return alert('Please upload a file first.');
