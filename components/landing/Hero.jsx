@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ArrowDownTrayIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
-
+import axios from "axios";
 export default function Hero() {
   const [file, setFile] = useState(null);
   const [conversionType, setConversionType] = useState('pdf');
@@ -35,21 +35,38 @@ export default function Hero() {
     setLoading(true);
     setConvertedFileUrl('');
 
-    try {
-      const res = await fetch(`/api/convert-to-${conversionType}`, {
-        method: 'POST',
-        body: formData,
-      });
+    // try {
+    //   const res = await fetch(`/api/convert-to-${conversionType}`, {
+    //     method: 'POST',
+    //     body: formData,
+    //   });
 
-      if (!res.ok) throw new Error('Conversion failed');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      setConvertedFileUrl(url);
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
+    //   if (!res.ok) throw new Error('Conversion failed');
+    //   const blob = await res.blob();
+    //   const url = URL.createObjectURL(blob);
+    //   setConvertedFileUrl(url);
+    // } catch (err) {
+    //   alert(err.message);
+    // } finally {
+    //   setLoading(false);
+    // }
+
+    
+  try {
+    const response = await axios.post(`/api/convert-to-${conversionType}`, formData, {
+      responseType: 'blob', // important
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    const url = URL.createObjectURL(response.data);
+    setConvertedFileUrl(url);
+  } catch (err) {
+    alert('Conversion failed: ' + err.message);
+  } finally {
+    setLoading(false);
+  }
   };
 
   return (
