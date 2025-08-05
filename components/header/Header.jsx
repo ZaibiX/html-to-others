@@ -42,7 +42,7 @@ export default function Header() {
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6">
           {navLinks}
-          <Button>Login</Button>
+          <Button onClick={()=>{alert("Login Functionality will be added soon. :)")}}>Login</Button>
         </nav>
 
         {/* Mobile menu button */}
