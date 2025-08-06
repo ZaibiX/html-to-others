@@ -60,8 +60,16 @@ export default function Hero() {
       },
     });
 
-    const url = URL.createObjectURL(response.data);
-    setConvertedFileUrl(url);
+    // const url = URL.createObjectURL(response.data);
+    // setConvertedFileUrl(url);
+    const mimeType =
+  conversionType === 'pdf'
+    ? 'application/pdf'
+    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+const blob = new Blob([response.data], { type: mimeType });
+const url = URL.createObjectURL(blob);
+setConvertedFileUrl(url);
   } catch (err) {
     alert('Conversion failed: ' + err.message);
   } finally {
