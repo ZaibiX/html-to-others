@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ArrowDownTrayIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import axios from "axios";
 export default function Hero() {
@@ -9,9 +9,12 @@ export default function Hero() {
   const [convertedFileUrl, setConvertedFileUrl] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // const inputFileRef= useRef()
+
   const handleUpload = (e) => {
   const uploadedFile = e.target.files[0];
-  console.log("File name is ", uploadedFile.name)
+  // console.log("File name is ", uploadedFile.name)
+  // console.log("ref is", inputFileRef.current.value)
 
   if (!uploadedFile) return;
 
@@ -97,6 +100,7 @@ setConvertedFileUrl(url);
                 accept=".html"
                 onChange={handleUpload}
                 className="hidden"
+                // ref={inputFileRef}
               />
               {file ? (
                 <span className="font-medium">{file.name}</span>

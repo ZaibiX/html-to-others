@@ -1,81 +1,46 @@
+// app/api/convert-to-docx/route.js
+
 import { NextResponse } from 'next/server';
-import { writeFile, readFile, unlink } from 'fs/promises';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
-import os from 'os';
-import crypto from 'crypto';
-import axios from "axios";
-import { JSDOM } from 'jsdom';
+import HTMLtoDOCX from 'html-to-docx';
+import { Readable } from 'stream';
 
-const execAsync = promisify(exec);
-
-export async function POST(req) {
+export const POST = async (req) => {
   try {
+    // Get the form data
     const formData = await req.formData();
     const file = formData.get('file');
 
-    // 1️⃣ Validation
     if (!file || !file.name.endsWith('.html')) {
-      return NextResponse.json({ error: 'Invalid file. Upload a .html file.' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid file' }, { status: 400 });
     }
 
-    // 2️⃣ Read HTML content
-    let html = await file.text();
+    const htmlText = await file.text(); // read file content as string
 
-    // 3️⃣ Inline remote images into Base64
-    const dom = new JSDOM(html);
-    const imgEls = dom.window.document.querySelectorAll('img');
-    await Promise.all(
-      Array.from(imgEls).map(async (img) => {
-        const src = img.src;
-        if (src.startsWith('http')) {
-          try {
-            const res = await axios.get(src, { responseType: 'arraybuffer' });
-            const buffer = Buffer.from(res.data, 'binary');
-            const mime = res.headers['content-type'] || 'image/png';
-            const base64 = buffer.toString('base64');
-            img.src = `data:${mime};base64,${base64}`;
-          } catch (error) {
-            console.error(`Failed to fetch image ${src}:`, error.message);
-          }
-        }
-      })
-    );
-    html = dom.serialize();
+    const docxBuffer = await HTMLtoDOCX(htmlText, null, {
+      orientation: 'portrait',
+      margins: {
+        top: 1440, // 1 inch
+        right: 1440,
+        bottom: 1440,
+        left: 1440,
+      },
+      footer: false,
+      header: false,
+      title: file.name.replace('.html', ''),
+    });
 
-    // 4️⃣ Prepare temp file paths
-    const id = crypto.randomUUID();
-    const inputPath = path.join(os.tmpdir(), `${id}.html`);
-    const outputDir = os.tmpdir();
-    const outputPath = path.join(outputDir, `${id}.docx`);
+    const stream = Readable.from(docxBuffer);
 
-    // 5️⃣ Write inlined HTML to temp file
-    await writeFile(inputPath, html, 'utf8');
-
-    // 6️⃣ Run Pandoc CLI to convert HTML to DOCX (replace LibreOffice)
-    await execAsync(
-      `pandoc "${inputPath}" -o "${outputPath}"`
-    );
-
-    // 7️⃣ Read generated DOCX
-    const docxBuffer = await readFile(outputPath);
-
-    // 8️⃣ Cleanup temp files
-    await unlink(inputPath);
-    await unlink(outputPath);
-
-    // 9️⃣ Return DOCX
-    return new Response(docxBuffer, {
+    return new NextResponse(stream, {
       status: 200,
       headers: {
         'Content-Type':
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'Content-Disposition': 'attachment; filename="converted.docx"',
+        'Content-Disposition': 'attachment; filename=converted.docx',
       },
     });
-  } catch (err) {
-    console.error('[Pandoc DOCX Error]', err);
+  } catch (error) {
+    console.error('[DOCX CONVERT ERROR]', error);
     return NextResponse.json({ error: 'Conversion failed' }, { status: 500 });
   }
-}
+};
